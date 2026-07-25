@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -123,15 +124,19 @@ fun FullPreviewDialog(
                             )
                         }
 
-                        // Viewport Switcher Controls - Frosted Glass Chips
+                        // Viewport Switcher Controls - Scrollable Frosted Glass Chips
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .weight(1f, fill = false)
+                                .horizontalScroll(rememberScrollState())
+                                .padding(horizontal = 8.dp)
                         ) {
                             FilterChip(
                                 selected = selectedViewport == ViewportMode.DESKTOP,
                                 onClick = { selectedViewport = ViewportMode.DESKTOP },
-                                label = { Text("Desktop") },
+                                label = { Text("Desktop", maxLines = 1, softWrap = false) },
                                 leadingIcon = {
                                     Icon(
                                         Icons.Default.DesktopWindows,
@@ -157,7 +162,7 @@ fun FullPreviewDialog(
                             FilterChip(
                                 selected = selectedViewport == ViewportMode.TABLET,
                                 onClick = { selectedViewport = ViewportMode.TABLET },
-                                label = { Text("Tablet (768px)") },
+                                label = { Text("Tablet (768px)", maxLines = 1, softWrap = false) },
                                 leadingIcon = {
                                     Icon(
                                         Icons.Default.Tablet,
@@ -183,7 +188,7 @@ fun FullPreviewDialog(
                             FilterChip(
                                 selected = selectedViewport == ViewportMode.MOBILE,
                                 onClick = { selectedViewport = ViewportMode.MOBILE },
-                                label = { Text("Mobile (375px)") },
+                                label = { Text("Mobile (375px)", maxLines = 1, softWrap = false) },
                                 leadingIcon = {
                                     Icon(
                                         Icons.Default.PhoneIphone,

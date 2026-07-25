@@ -75,6 +75,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.ColorPresets
@@ -133,7 +134,9 @@ fun ControlPanel(
                                 text = title,
                                 color = if (selectedTab == index) Color.White else Color(0xFF94A3B8),
                                 fontSize = 13.sp,
-                                fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal
+                                fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                     }
@@ -586,11 +589,22 @@ private fun DeployTab(
                         strokeWidth = 2.dp
                     )
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text("Publishing to GitHub...")
+                    Text(
+                        text = "Publishing to GitHub...",
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 } else {
                     Icon(Icons.Default.CloudUpload, contentDescription = null)
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text("Publish Website to GitHub Pages", fontWeight = FontWeight.Bold)
+                    Text(
+                        text = "Publish to GitHub Pages",
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
         }
@@ -636,7 +650,7 @@ private fun DeployTab(
                         ) {
                             Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Open Live Site")
+                            Text("Open Live Site", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                         }
 
                         OutlinedButton(
@@ -649,7 +663,7 @@ private fun DeployTab(
                         ) {
                             Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Copy Link", color = Color.White)
+                            Text("Copy Link", color = Color.White, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                         }
                     }
                 }
@@ -705,7 +719,7 @@ private fun DraftsTab(
                 ) {
                     Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Save Draft")
+                    Text("Save Draft", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                 }
 
                 OutlinedButton(
@@ -714,7 +728,7 @@ private fun DraftsTab(
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("New Draft", color = Color.White)
+                    Text("New Draft", color = Color.White, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                 }
             }
         }
@@ -747,7 +761,7 @@ private fun DraftsTab(
                                 onClick = { viewModel.loadPortfolio(draft) },
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981))
                             ) {
-                                Text("Restore", fontSize = 11.sp)
+                                Text("Restore", fontSize = 11.sp, maxLines = 1, softWrap = false)
                             }
                         }
                     }

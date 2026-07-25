@@ -97,7 +97,7 @@ fun ProjectCardEditor(
             ) {
                 Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("Add Project", fontSize = 12.sp)
+                Text("Add Project", fontSize = 12.sp, maxLines = 1, softWrap = false)
             }
         }
 
@@ -419,7 +419,7 @@ fun ProjectCardDialog(
                     horizontalArrangement = Arrangement.End
                 ) {
                     TextButton(onClick = onDismiss) {
-                        Text("Cancel", color = Color(0xFF94A3B8))
+                        Text("Cancel", color = Color(0xFF94A3B8), maxLines = 1, softWrap = false)
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
@@ -440,7 +440,7 @@ fun ProjectCardDialog(
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1))
                     ) {
-                        Text("Save Card")
+                        Text("Save Card", maxLines = 1, softWrap = false)
                     }
                 }
             }
