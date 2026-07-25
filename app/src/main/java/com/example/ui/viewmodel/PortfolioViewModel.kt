@@ -81,13 +81,47 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
         updateState { it.copy(heroTemplate = template) }
     }
 
-    fun toggleSectionVisibility(about: Boolean? = null, skills: Boolean? = null, projects: Boolean? = null, contact: Boolean? = null) {
+    fun applyTheme(theme: com.example.data.model.AppTheme) {
+        updateState { current ->
+            if (theme == com.example.data.model.AppTheme.CUSTOM) {
+                current.copy(currentTheme = theme)
+            } else {
+                current.copy(
+                    currentTheme = theme,
+                    primaryColorHex = theme.primaryColorHex,
+                    accentColorHex = theme.accentColorHex,
+                    backgroundColorHex = theme.backgroundColorHex,
+                    cardBackgroundColorHex = theme.cardBackgroundColorHex,
+                    textColorHex = theme.textColorHex,
+                    fontFamily = theme.fontFamily,
+                    borderRadiusPx = theme.borderRadiusPx
+                )
+            }
+        }
+    }
+
+    fun selectTreeNode(nodeName: String) {
+        updateState { it.copy(selectedTreeNode = nodeName) }
+    }
+
+    fun toggleSectionVisibility(
+        about: Boolean? = null,
+        skills: Boolean? = null,
+        experience: Boolean? = null,
+        projects: Boolean? = null,
+        testimonials: Boolean? = null,
+        contact: Boolean? = null,
+        footer: Boolean? = null
+    ) {
         updateState { current ->
             current.copy(
                 showAboutSection = about ?: current.showAboutSection,
                 showSkillsSection = skills ?: current.showSkillsSection,
+                showExperienceSection = experience ?: current.showExperienceSection,
                 showProjectsSection = projects ?: current.showProjectsSection,
-                showContactSection = contact ?: current.showContactSection
+                showTestimonialsSection = testimonials ?: current.showTestimonialsSection,
+                showContactSection = contact ?: current.showContactSection,
+                showFooterSection = footer ?: current.showFooterSection
             )
         }
     }
@@ -110,6 +144,40 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun updateContainerMaxWidth(widthPx: Int) {
         updateState { it.copy(containerMaxWidthPx = widthPx.coerceIn(800, 1400)) }
+    }
+
+    fun updateLayoutSpacing(
+        headerPaddingV: Int? = null,
+        headerPaddingH: Int? = null,
+        sectionPaddingTop: Int? = null,
+        sectionPaddingBottom: Int? = null,
+        cardPadding: Int? = null,
+        gap: Int? = null
+    ) {
+        updateState { current ->
+            current.copy(
+                headerPaddingVerticalPx = headerPaddingV?.coerceIn(4, 80) ?: current.headerPaddingVerticalPx,
+                headerPaddingHorizontalPx = headerPaddingH?.coerceIn(8, 100) ?: current.headerPaddingHorizontalPx,
+                sectionPaddingTopPx = sectionPaddingTop?.coerceIn(10, 180) ?: current.sectionPaddingTopPx,
+                sectionPaddingBottomPx = sectionPaddingBottom?.coerceIn(10, 180) ?: current.sectionPaddingBottomPx,
+                cardPaddingPx = cardPadding?.coerceIn(8, 60) ?: current.cardPaddingPx,
+                gapPx = gap?.coerceIn(4, 80) ?: current.gapPx
+            )
+        }
+    }
+
+    fun updateFlexLayout(
+        flexDirection: String? = null,
+        alignItems: String? = null,
+        justifyContent: String? = null
+    ) {
+        updateState { current ->
+            current.copy(
+                layoutFlexDirection = flexDirection ?: current.layoutFlexDirection,
+                layoutAlignItems = alignItems ?: current.layoutAlignItems,
+                layoutJustifyContent = justifyContent ?: current.layoutJustifyContent
+            )
+        }
     }
 
     fun updateColorHex(

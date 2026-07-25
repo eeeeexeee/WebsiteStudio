@@ -27,8 +27,22 @@ object WebsiteGenerator {
 
         val aboutHtml = if (state.showAboutSection) generateAboutSection(state) else ""
         val skillsHtml = if (state.showSkillsSection) generateSkillsSection(state) else ""
+        val experienceHtml = if (state.showExperienceSection) generateExperienceSection(state) else ""
         val projectsHtml = if (state.showProjectsSection) generateProjectsSection(state) else ""
+        val testimonialsHtml = if (state.showTestimonialsSection) generateTestimonialsSection(state) else ""
         val contactHtml = if (state.showContactSection) generateContactSection(state) else ""
+        val footerHtml = if (state.showFooterSection) generateFooterSection(state) else ""
+
+        val isDarkText = state.textColorHex.startsWith("#0") || state.textColorHex.startsWith("#1") || state.textColorHex.startsWith("#2") || state.textColorHex.startsWith("#3")
+        val textMutedColor = if (isDarkText) "rgba(29, 29, 31, 0.65)" else "rgba(255, 255, 255, 0.65)"
+
+        val cardShadowCss = when (state.currentTheme.shadowStyle) {
+            "frosted_glass" -> "background: rgba(255, 255, 255, 0.7) !important; backdrop-filter: blur(25px) saturate(190%) !important; -webkit-backdrop-filter: blur(25px) saturate(190%) !important; border: 1px solid rgba(255, 255, 255, 0.8) !important; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06), inset 0 0 0 1px rgba(255, 255, 255, 0.5) !important;"
+            "brutalist" -> "border: 3px solid #000000 !important; box-shadow: 5px 5px 0px #000000 !important; border-radius: ${state.borderRadiusPx}px !important;"
+            "glow" -> "box-shadow: 0 0 30px rgba(99, 102, 241, 0.3) !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; border-radius: ${state.borderRadiusPx}px !important;"
+            "none" -> "box-shadow: none !important; border: 1px solid rgba(255, 255, 255, 0.12) !important; border-radius: ${state.borderRadiusPx}px !important;"
+            else -> "box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important; border: 1px solid rgba(255, 255, 255, 0.12) !important; border-radius: ${state.borderRadiusPx}px !important;"
+        }
 
         return """
 <!DOCTYPE html>
@@ -47,12 +61,21 @@ object WebsiteGenerator {
             --bg: ${state.backgroundColorHex};
             --card-bg: ${state.cardBackgroundColorHex};
             --text: ${state.textColorHex};
-            --text-muted: rgba(255, 255, 255, 0.65);
+            --text-muted: $textMutedColor;
             --border-radius: ${state.borderRadiusPx}px;
             --base-font-size: ${state.baseFontSizePx}px;
             --hero-padding: ${state.heroVerticalPaddingPx}px;
             --max-width: ${state.containerMaxWidthPx}px;
             --font-family: $fontCssName;
+            --header-padding-v: ${state.headerPaddingVerticalPx}px;
+            --header-padding-h: ${state.headerPaddingHorizontalPx}px;
+            --section-padding-top: ${state.sectionPaddingTopPx}px;
+            --section-padding-bottom: ${state.sectionPaddingBottomPx}px;
+            --card-padding: ${state.cardPaddingPx}px;
+            --gap: ${state.gapPx}px;
+            --layout-flex-dir: ${state.layoutFlexDirection};
+            --layout-align: ${state.layoutAlignItems};
+            --layout-justify: ${state.layoutJustifyContent};
         }
 
         * {
@@ -100,40 +123,77 @@ object WebsiteGenerator {
         }
 
         .header-minimalist {
-            padding: 24px 0;
+            padding: var(--header-padding-v) var(--header-padding-h);
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: var(--layout-flex-dir);
+            justify-content: var(--layout-justify);
+            align-items: var(--layout-align);
+            gap: var(--gap);
+            width: 100%;
+            max-width: var(--max-width);
+            margin: 0 auto;
         }
 
         .header-centered {
-            padding: 24px 0;
+            padding: var(--header-padding-v) var(--header-padding-h);
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 16px;
+            gap: var(--gap);
+            width: 100%;
+            max-width: var(--max-width);
+            margin: 0 auto;
         }
 
         .header-glassmorphic {
             position: sticky;
             top: 16px;
             margin: 16px auto;
-            max-width: calc(var(--max-width) - 32px);
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: calc(100% - (var(--header-padding-h) * 2));
+            max-width: var(--max-width);
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(25px) saturate(190%);
+            -webkit-backdrop-filter: blur(25px) saturate(190%);
+            border: 1px solid rgba(255, 255, 255, 0.8);
             border-radius: calc(var(--border-radius) * 1.5);
-            padding: 16px 28px;
+            padding: var(--header-padding-v) var(--header-padding-h);
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            flex-direction: var(--layout-flex-dir);
+            justify-content: var(--layout-justify);
+            align-items: var(--layout-align);
+            gap: var(--gap);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+        }
+
+        .glass-ambient-sphere-1 {
+            position: fixed;
+            top: -10%;
+            right: -10%;
+            width: 650px;
+            height: 650px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 122, 255, 0.22) 0%, rgba(90, 200, 250, 0.12) 50%, transparent 70%);
+            filter: blur(80px);
+            pointer-events: none;
+            z-index: -1;
+        }
+        .glass-ambient-sphere-2 {
+            position: fixed;
+            bottom: -10%;
+            left: -10%;
+            width: 700px;
+            height: 700px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(175, 82, 222, 0.18) 0%, rgba(255, 45, 85, 0.1) 50%, transparent 70%);
+            filter: blur(90px);
+            pointer-events: none;
+            z-index: -1;
         }
 
         .header-darkgradient {
             background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%);
-            padding: 24px 0;
+            padding: 0;
+            width: 100%;
         }
 
         .logo {
@@ -292,7 +352,8 @@ object WebsiteGenerator {
 
         /* Sections */
         .section {
-            padding: 70px 0;
+            padding-top: var(--section-padding-top);
+            padding-bottom: var(--section-padding-bottom);
         }
 
         .section-title {
@@ -311,15 +372,15 @@ object WebsiteGenerator {
         /* Cards & Grids */
         .grid-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 24px;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: var(--gap);
         }
 
         .card {
             background: var(--card-bg);
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: var(--border-radius);
-            padding: 28px;
+            padding: var(--card-padding);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -471,13 +532,34 @@ object WebsiteGenerator {
 
         @media (max-width: 768px) {
             .hero-title { font-size: 2.2rem; }
-            .header-glassmorphic { position: relative; top: 0; }
-            .header-minimalist { flex-direction: column; gap: 16px; text-align: center; }
-            .grid-cards { grid-template-columns: 1fr; }
+            .header-minimalist, .header-centered, .header-glassmorphic {
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: center !important;
+                text-align: center !important;
+                gap: 12px !important;
+                padding-left: 16px !important;
+                padding-right: 16px !important;
+            }
+            .header-glassmorphic {
+                position: relative !important;
+                top: 0 !important;
+                width: calc(100% - 24px) !important;
+                margin: 12px auto !important;
+            }
+            nav ul {
+                flex-wrap: wrap !important;
+                justify-content: center !important;
+                gap: 8px 16px !important;
+            }
+            .grid-cards { grid-template-columns: 1fr !important; }
+            .container { padding: 0 16px !important; }
         }
     </style>
 </head>
 <body>
+    <div class="glass-ambient-sphere-1"></div>
+    <div class="glass-ambient-sphere-2"></div>
 
     $headerHtml
 
@@ -485,21 +567,13 @@ object WebsiteGenerator {
         $heroHtml
         $aboutHtml
         $skillsHtml
+        $experienceHtml
         $projectsHtml
+        $testimonialsHtml
         $contactHtml
     </main>
 
-    <footer>
-        <div class="container">
-            <div class="social-links">
-                ${if (state.githubUrl.isNotBlank()) "<a href=\"${escapeHtml(state.githubUrl)}\" target=\"_blank\" class=\"social-link\" title=\"GitHub\">GH</a>" else ""}
-                ${if (state.linkedinUrl.isNotBlank()) "<a href=\"${escapeHtml(state.linkedinUrl)}\" target=\"_blank\" class=\"social-link\" title=\"LinkedIn\">IN</a>" else ""}
-                ${if (state.twitterUrl.isNotBlank()) "<a href=\"${escapeHtml(state.twitterUrl)}\" target=\"_blank\" class=\"social-link\" title=\"X / Twitter\">X</a>" else ""}
-                ${if (state.email.isNotBlank()) "<a href=\"mailto:${escapeHtml(state.email)}\" class=\"social-link\" title=\"Email\">✉</a>" else ""}
-            </div>
-            <p class="footer-text">© ${java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)} ${escapeHtml(state.authorName)}. Crafted with WebStudio Tablet.</p>
-        </div>
-    </footer>
+    $footerHtml
 
 </body>
 </html>
@@ -719,6 +793,71 @@ object WebsiteGenerator {
                 $demoBtn
             </div>
         </div>
+        """.trimIndent()
+    }
+
+    private fun generateExperienceSection(state: PortfolioState): String {
+        val expCards = state.experienceList.joinToString("") { exp ->
+            """
+            <div class="card" style="margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                    <div>
+                        <h3 class="card-title" style="margin: 0; font-size: 1.15rem;">${escapeHtml(exp.role)}</h3>
+                        <p style="color: var(--primary); font-weight: 600; font-size: 0.95rem;">${escapeHtml(exp.company)}</p>
+                    </div>
+                    <span class="tag">${escapeHtml(exp.period)}</span>
+                </div>
+                <p class="card-desc" style="margin: 0;">${escapeHtml(exp.description)}</p>
+            </div>
+            """.trimIndent()
+        }
+        return """
+        <section id="experience" class="section">
+            <h2 class="section-title">Work Experience</h2>
+            <p class="section-desc">Career timeline and engineering achievements.</p>
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                $expCards
+            </div>
+        </section>
+        """.trimIndent()
+    }
+
+    private fun generateTestimonialsSection(state: PortfolioState): String {
+        val testCards = state.testimonialsList.joinToString("") { item ->
+            """
+            <div class="card">
+                <p style="font-style: italic; color: var(--text); margin-bottom: 16px; line-height: 1.6;">“${escapeHtml(item.quote)}”</p>
+                <div>
+                    <h4 style="font-weight: 700; font-size: 1rem; color: var(--accent);">${escapeHtml(item.name)}</h4>
+                    <p style="color: var(--text-muted); font-size: 0.85rem;">${escapeHtml(item.title)} ${if (item.company.isNotBlank()) "at ${escapeHtml(item.company)}" else ""}</p>
+                </div>
+            </div>
+            """.trimIndent()
+        }
+        return """
+        <section id="testimonials" class="section">
+            <h2 class="section-title">Testimonials</h2>
+            <p class="section-desc">Endorsements from engineering leaders and collaborators.</p>
+            <div class="grid-cards">
+                $testCards
+            </div>
+        </section>
+        """.trimIndent()
+    }
+
+    private fun generateFooterSection(state: PortfolioState): String {
+        return """
+        <footer>
+            <div class="container">
+                <div class="social-links">
+                    ${if (state.githubUrl.isNotBlank()) "<a href=\"${escapeHtml(state.githubUrl)}\" target=\"_blank\" class=\"social-link\" title=\"GitHub\">GH</a>" else ""}
+                    ${if (state.linkedinUrl.isNotBlank()) "<a href=\"${escapeHtml(state.linkedinUrl)}\" target=\"_blank\" class=\"social-link\" title=\"LinkedIn\">IN</a>" else ""}
+                    ${if (state.twitterUrl.isNotBlank()) "<a href=\"${escapeHtml(state.twitterUrl)}\" target=\"_blank\" class=\"social-link\" title=\"X / Twitter\">X</a>" else ""}
+                    ${if (state.email.isNotBlank()) "<a href=\"mailto:${escapeHtml(state.email)}\" class=\"social-link\" title=\"Email\">✉</a>" else ""}
+                </div>
+                <p class="footer-text">© ${java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)} ${escapeHtml(state.authorName)}. Crafted with WebStudio Tablet.</p>
+            </div>
+        </footer>
         """.trimIndent()
     }
 

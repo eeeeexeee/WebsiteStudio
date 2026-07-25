@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudUpload
@@ -39,6 +41,10 @@ import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Style
+import androidx.compose.material.icons.filled.TextFields
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -49,6 +55,8 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
@@ -78,6 +86,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.model.AppTheme
 import com.example.data.model.ColorPresets
 import com.example.data.model.FontFamilyOption
 import com.example.data.model.HeaderTemplate
@@ -97,12 +106,13 @@ fun ControlPanel(
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf(
-        "Design & Theme" to Icons.Default.Palette,
-        "Templates & Layout" to Icons.Default.Style,
-        "Content & Bio" to Icons.Default.Edit,
-        "Project Cards" to Icons.Default.Work,
-        "GitHub Deploy" to Icons.Default.CloudUpload,
-        "Saved Drafts" to Icons.Default.Folder
+        "Tree" to Icons.Default.AccountTree,
+        "Theme" to Icons.Default.Palette,
+        "Inspector" to Icons.Default.Tune,
+        "Templates" to Icons.Default.Style,
+        "Typography" to Icons.Default.TextFields,
+        "Content" to Icons.Default.Edit,
+        "Export" to Icons.Default.CloudUpload
     )
 
     Column(
@@ -110,12 +120,12 @@ fun ControlPanel(
             .fillMaxSize()
             .background(Color(0xFF0F172A))
     ) {
-        // Tab Navigation Header
+        // Tab Navigation Header (Design Tool Mode Selector)
         ScrollableTabRow(
             selectedTabIndex = selectedTab,
             containerColor = Color(0xFF1E293B),
             contentColor = Color.White,
-            edgePadding = 12.dp
+            edgePadding = 8.dp
         ) {
             tabs.forEachIndexed { index, (title, icon) ->
                 Tab(
@@ -126,14 +136,14 @@ fun ControlPanel(
                             Icon(
                                 icon,
                                 contentDescription = null,
-                                modifier = Modifier.size(16.dp),
+                                modifier = Modifier.size(15.dp),
                                 tint = if (selectedTab == index) Color(0xFF6366F1) else Color(0xFF94A3B8)
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Spacer(modifier = Modifier.width(5.dp))
                             Text(
                                 text = title,
                                 color = if (selectedTab == index) Color.White else Color(0xFF94A3B8),
-                                fontSize = 13.sp,
+                                fontSize = 12.sp,
                                 fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
                                 maxLines = 1,
                                 softWrap = false
@@ -149,16 +159,296 @@ fun ControlPanel(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             when (selectedTab) {
-                0 -> DesignTab(viewModel, portfolioState)
-                1 -> LayoutTab(viewModel, portfolioState)
-                2 -> ContentTab(viewModel, portfolioState)
-                3 -> ProjectsTab(viewModel, portfolioState)
-                4 -> DeployTab(viewModel, portfolioState, publishUiState)
-                5 -> DraftsTab(viewModel, portfolioState, savedPortfolios)
+                0 -> ComponentTreeTab(viewModel, portfolioState, onOpenInspector = { selectedTab = 2 })
+                1 -> ThemeTab(viewModel, portfolioState)
+                2 -> FigmaInspectorTab(viewModel, portfolioState)
+                3 -> TemplatesTab(viewModel, portfolioState)
+                4 -> TypographyTab(viewModel, portfolioState)
+                5 -> ContentTab(viewModel, portfolioState)
+                6 -> ExportTab(viewModel, portfolioState, savedPortfolios, publishUiState)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ComponentTreeTab(
+    viewModel: PortfolioViewModel,
+    state: PortfolioState,
+    onOpenInspector: () -> Unit
+) {
+    ControlCard(title = "Real Component Tree", icon = Icons.Default.AccountTree) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                "Click a section to inspect its properties in Figma Inspector or toggle visibility:",
+                color = Color(0xFF94A3B8),
+                fontSize = 11.sp
+            )
+
+            // Root Node
+            TreeNodeRow(
+                label = "Portfolio (Root Container)",
+                depth = 0,
+                isSelected = state.selectedTreeNode == "GLOBAL",
+                isVisible = true,
+                onSelect = { viewModel.selectTreeNode("GLOBAL") },
+                onToggleVisible = null
+            )
+
+            // Header Node
+            TreeNodeRow(
+                label = "Header (Navigation Bar)",
+                depth = 1,
+                isSelected = state.selectedTreeNode == "HEADER",
+                isVisible = true,
+                onSelect = { viewModel.selectTreeNode("HEADER") },
+                onToggleVisible = null
+            )
+
+            // Hero Node
+            TreeNodeRow(
+                label = "Hero (Showcase)",
+                depth = 1,
+                isSelected = state.selectedTreeNode == "HERO",
+                isVisible = true,
+                onSelect = { viewModel.selectTreeNode("HERO") },
+                onToggleVisible = null
+            )
+
+            // About Node
+            TreeNodeRow(
+                label = "About Me",
+                depth = 1,
+                isSelected = state.selectedTreeNode == "ABOUT",
+                isVisible = state.showAboutSection,
+                onSelect = { viewModel.selectTreeNode("ABOUT") },
+                onToggleVisible = { viewModel.toggleSectionVisibility(about = it) }
+            )
+
+            // Skills Node
+            TreeNodeRow(
+                label = "Skills & Tech",
+                depth = 1,
+                isSelected = state.selectedTreeNode == "SKILLS",
+                isVisible = state.showSkillsSection,
+                onSelect = { viewModel.selectTreeNode("SKILLS") },
+                onToggleVisible = { viewModel.toggleSectionVisibility(skills = it) }
+            )
+
+            // Experience Node
+            TreeNodeRow(
+                label = "Work Experience",
+                depth = 1,
+                isSelected = state.selectedTreeNode == "EXPERIENCE",
+                isVisible = state.showExperienceSection,
+                onSelect = { viewModel.selectTreeNode("EXPERIENCE") },
+                onToggleVisible = { viewModel.toggleSectionVisibility(experience = it) }
+            )
+
+            // Projects Node
+            TreeNodeRow(
+                label = "Featured Projects",
+                depth = 1,
+                isSelected = state.selectedTreeNode == "PROJECTS",
+                isVisible = state.showProjectsSection,
+                onSelect = { viewModel.selectTreeNode("PROJECTS") },
+                onToggleVisible = { viewModel.toggleSectionVisibility(projects = it) }
+            )
+
+            // Testimonials Node
+            TreeNodeRow(
+                label = "Testimonials",
+                depth = 1,
+                isSelected = state.selectedTreeNode == "TESTIMONIALS",
+                isVisible = state.showTestimonialsSection,
+                onSelect = { viewModel.selectTreeNode("TESTIMONIALS") },
+                onToggleVisible = { viewModel.toggleSectionVisibility(testimonials = it) }
+            )
+
+            // Contact Node
+            TreeNodeRow(
+                label = "Contact Section",
+                depth = 1,
+                isSelected = state.selectedTreeNode == "CONTACT",
+                isVisible = state.showContactSection,
+                onSelect = { viewModel.selectTreeNode("CONTACT") },
+                onToggleVisible = { viewModel.toggleSectionVisibility(contact = it) }
+            )
+
+            // Footer Node
+            TreeNodeRow(
+                label = "Footer & Links",
+                depth = 1,
+                isSelected = state.selectedTreeNode == "FOOTER",
+                isVisible = state.showFooterSection,
+                onSelect = { viewModel.selectTreeNode("FOOTER") },
+                onToggleVisible = { viewModel.toggleSectionVisibility(footer = it) }
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Button(
+                onClick = onOpenInspector,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Inspect '${state.selectedTreeNode}' in Figma Inspector →", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun TreeNodeRow(
+    label: String,
+    depth: Int,
+    isSelected: Boolean,
+    isVisible: Boolean,
+    onSelect: () -> Unit,
+    onToggleVisible: ((Boolean) -> Unit)?
+) {
+    val prefix = if (depth == 0) "❖ " else " ├── "
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onSelect() },
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) Color(0xFF312E81) else Color(0xFF0F172A)
+        ),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            if (isSelected) Color(0xFF6366F1) else Color(0xFF334155)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = prefix,
+                    color = Color(0xFF818CF8),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = label,
+                    color = if (isVisible) Color.White else Color(0xFF64748B),
+                    fontSize = 12.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                )
+            }
+
+            if (onToggleVisible != null) {
+                IconButton(
+                    onClick = { onToggleVisible(!isVisible) },
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                        contentDescription = "Toggle Section",
+                        tint = if (isVisible) Color(0xFF38BDF8) else Color(0xFF64748B),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ThemeTab(viewModel: PortfolioViewModel, state: PortfolioState) {
+    ControlCard(title = "Design System Themes", icon = Icons.Default.Palette) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            AppTheme.entries.filter { it != AppTheme.CUSTOM }.forEach { theme ->
+                val isSelected = state.currentTheme == theme
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.applyTheme(theme) },
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isSelected) Color(0xFF1E1B4B) else Color(0xFF0F172A)
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(
+                        if (isSelected) 2.dp else 1.dp,
+                        if (isSelected) Color(0xFF818CF8) else Color(0xFF334155)
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = theme.displayName,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+
+                            if (isSelected) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(Color(0xFF6366F1))
+                                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                                ) {
+                                    Text("ACTIVE", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = theme.description,
+                            color = Color(0xFF94A3B8),
+                            fontSize = 11.sp
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                listOf(
+                                    theme.primaryColorHex,
+                                    theme.accentColorHex,
+                                    theme.backgroundColorHex,
+                                    theme.cardBackgroundColorHex,
+                                    theme.textColorHex
+                                ).forEach { hex ->
+                                    Box(
+                                        modifier = Modifier
+                                            .size(18.dp)
+                                            .clip(CircleShape)
+                                            .background(parseHexColor(hex))
+                                            .border(1.dp, Color(0x33FFFFFF), CircleShape)
+                                    )
+                                }
+                            }
+
+                            Text(
+                                text = "${theme.fontFamily.displayName} • ${theme.borderRadiusPx}px",
+                                color = Color(0xFF38BDF8),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -166,50 +456,210 @@ fun ControlPanel(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DesignTab(viewModel: PortfolioViewModel, state: PortfolioState) {
-    ControlCard(title = "Preset Color Palettes", icon = Icons.Default.ColorLens) {
+private fun FigmaInspectorTab(viewModel: PortfolioViewModel, state: PortfolioState) {
+    ControlCard(
+        title = "Figma Inspector — ${state.selectedTreeNode}",
+        icon = Icons.Default.Tune
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+
+            Text(
+                "Fine-tune spacing, radius, layout direction, typography & colors for ${state.selectedTreeNode}:",
+                color = Color(0xFFCBD5E1),
+                fontSize = 11.sp
+            )
+
+            // Padding Sliders
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Header Vertical Padding", color = Color(0xFFCBD5E1), fontSize = 11.sp)
+                Text("${state.headerPaddingVerticalPx}px", color = Color(0xFF38BDF8), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
+            Slider(
+                value = state.headerPaddingVerticalPx.toFloat(),
+                onValueChange = { viewModel.updateLayoutSpacing(headerPaddingV = it.toInt()) },
+                valueRange = 8f..60f,
+                colors = controlSliderColors()
+            )
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Section Padding Top / Bottom", color = Color(0xFFCBD5E1), fontSize = 11.sp)
+                Text("${state.sectionPaddingTopPx}px", color = Color(0xFF38BDF8), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
+            Slider(
+                value = state.sectionPaddingTopPx.toFloat(),
+                onValueChange = { viewModel.updateLayoutSpacing(sectionPaddingTop = it.toInt(), sectionPaddingBottom = it.toInt()) },
+                valueRange = 20f..150f,
+                colors = controlSliderColors()
+            )
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Card Inner Padding", color = Color(0xFFCBD5E1), fontSize = 11.sp)
+                Text("${state.cardPaddingPx}px", color = Color(0xFF38BDF8), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
+            Slider(
+                value = state.cardPaddingPx.toFloat(),
+                onValueChange = { viewModel.updateLayoutSpacing(cardPadding = it.toInt()) },
+                valueRange = 12f..48f,
+                colors = controlSliderColors()
+            )
+
+            // Border Radius Slider
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Border Radius", color = Color(0xFFCBD5E1), fontSize = 11.sp)
+                Text("${state.borderRadiusPx}px", color = Color(0xFF38BDF8), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
+            Slider(
+                value = state.borderRadiusPx.toFloat(),
+                onValueChange = { viewModel.updateBorderRadius(it.toInt()) },
+                valueRange = 0f..32f,
+                colors = controlSliderColors()
+            )
+
+            // Gap Slider
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Flex & Grid Gap Spacing", color = Color(0xFFCBD5E1), fontSize = 11.sp)
+                Text("${state.gapPx}px", color = Color(0xFF38BDF8), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
+            Slider(
+                value = state.gapPx.toFloat(),
+                onValueChange = { viewModel.updateLayoutSpacing(gap = it.toInt()) },
+                valueRange = 8f..64f,
+                colors = controlSliderColors()
+            )
+
+            // Flex Direction & Align
+            Text("Flex Direction", color = Color(0xFFCBD5E1), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("row" to "Row (Horizontal)", "column" to "Column (Vertical)").forEach { (value, label) ->
+                    val isSelected = state.layoutFlexDirection == value
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { viewModel.updateFlexLayout(flexDirection = value) },
+                        label = { Text(label, fontSize = 11.sp, maxLines = 1, softWrap = false) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color(0xFF6366F1),
+                            selectedLabelColor = Color.White
+                        )
+                    )
+                }
+            }
+
+            Text("Justify Content", color = Color(0xFFCBD5E1), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                listOf(
+                    "space-between" to "Space Between",
+                    "center" to "Center",
+                    "flex-start" to "Start",
+                    "flex-end" to "End"
+                ).forEach { (value, label) ->
+                    val isSelected = state.layoutJustifyContent == value
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { viewModel.updateFlexLayout(justifyContent = value) },
+                        label = { Text(label, fontSize = 10.sp, maxLines = 1, softWrap = false) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color(0xFF6366F1),
+                            selectedLabelColor = Color.White
+                        )
+                    )
+                }
+            }
+
+            // Colors
+            Text("Color Inspector", color = Color(0xFFCBD5E1), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            ColorPickerItem(
+                label = "Primary Brand Color",
+                currentHex = state.primaryColorHex,
+                presetSwatches = listOf("#6366F1", "#007AFF", "#238636", "#D0BCFF", "#FF3366"),
+                onColorChange = { viewModel.updateColorHex(primary = it) }
+            )
+            ColorPickerItem(
+                label = "Accent Color",
+                currentHex = state.accentColorHex,
+                presetSwatches = listOf("#38BDF8", "#EC4899", "#58A6FF", "#00F0FF", "#00E676"),
+                onColorChange = { viewModel.updateColorHex(accent = it) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun TemplatesTab(viewModel: PortfolioViewModel, state: PortfolioState) {
+    ControlCard(title = "Header Template Picker", icon = Icons.Default.Style) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            ColorPresets.presets.forEach { preset ->
+            HeaderTemplate.entries.forEach { template ->
+                val isSelected = state.headerTemplate == template
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { viewModel.applyColorPreset(preset) },
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF334155))
+                        .clickable { viewModel.updateHeaderTemplate(template) },
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isSelected) Color(0xFF312E81) else Color(0xFF0F172A)
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        if (isSelected) Color(0xFF6366F1) else Color(0xFF334155)
+                    )
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(10.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                            .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = preset.name,
-                            color = Color.White,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold
+                            text = template.displayName,
+                            color = if (isSelected) Color.White else Color(0xFF94A3B8),
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            fontSize = 12.sp
                         )
-
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            listOf(preset.primary, preset.accent, preset.background, preset.cardBackground).forEach { hex ->
-                                Box(
-                                    modifier = Modifier
-                                        .size(16.dp)
-                                        .clip(CircleShape)
-                                        .background(parseHexColor(hex))
-                                )
-                            }
-                        }
                     }
                 }
             }
         }
     }
 
-    ControlCard(title = "Typography Engine", icon = Icons.Default.Palette) {
+    ControlCard(title = "Hero Layout Template Picker", icon = Icons.Default.Style) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            HeroTemplate.entries.forEach { template ->
+                val isSelected = state.heroTemplate == template
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.updateHeroTemplate(template) },
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isSelected) Color(0xFF312E81) else Color(0xFF0F172A)
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        if (isSelected) Color(0xFF6366F1) else Color(0xFF334155)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = template.displayName,
+                            color = if (isSelected) Color.White else Color(0xFF94A3B8),
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TypographyTab(viewModel: PortfolioViewModel, state: PortfolioState) {
+    ControlCard(title = "Typography Engine", icon = Icons.Default.TextFields) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Google Font Family", color = Color(0xFFCBD5E1), fontSize = 12.sp)
+            Text("Google Font Family", color = Color(0xFFCBD5E1), fontSize = 11.sp)
 
             var fontExpanded by remember { mutableStateOf(false) }
             ExposedDropdownMenuBox(
@@ -249,8 +699,8 @@ private fun DesignTab(viewModel: PortfolioViewModel, state: PortfolioState) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Base Font Size", color = Color(0xFFCBD5E1), fontSize = 12.sp)
-                Text("${state.baseFontSizePx}px", color = Color(0xFF38BDF8), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text("Base Font Size", color = Color(0xFFCBD5E1), fontSize = 11.sp)
+                Text("${state.baseFontSizePx}px", color = Color(0xFF38BDF8), fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
             Slider(
                 value = state.baseFontSizePx.toFloat(),
@@ -258,170 +708,6 @@ private fun DesignTab(viewModel: PortfolioViewModel, state: PortfolioState) {
                 valueRange = 12f..24f,
                 colors = controlSliderColors()
             )
-        }
-    }
-
-    ControlCard(title = "Spacing & Border Radius Sliders", icon = Icons.Default.Palette) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            // Hero Padding
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Hero Vertical Padding", color = Color(0xFFCBD5E1), fontSize = 12.sp)
-                Text("${state.heroVerticalPaddingPx}px", color = Color(0xFF38BDF8), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            }
-            Slider(
-                value = state.heroVerticalPaddingPx.toFloat(),
-                onValueChange = { viewModel.updateHeroPadding(it.toInt()) },
-                valueRange = 20f..150f,
-                colors = controlSliderColors()
-            )
-
-            // Border Radius
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Element Border Radius", color = Color(0xFFCBD5E1), fontSize = 12.sp)
-                Text("${state.borderRadiusPx}px", color = Color(0xFF38BDF8), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            }
-            Slider(
-                value = state.borderRadiusPx.toFloat(),
-                onValueChange = { viewModel.updateBorderRadius(it.toInt()) },
-                valueRange = 0f..32f,
-                colors = controlSliderColors()
-            )
-
-            // Container Max Width
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Container Max Width", color = Color(0xFFCBD5E1), fontSize = 12.sp)
-                Text("${state.containerMaxWidthPx}px", color = Color(0xFF38BDF8), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            }
-            Slider(
-                value = state.containerMaxWidthPx.toFloat(),
-                onValueChange = { viewModel.updateContainerMaxWidth(it.toInt()) },
-                valueRange = 800f..1400f,
-                colors = controlSliderColors()
-            )
-        }
-    }
-
-    ControlCard(title = "Custom Color Hex Pickers", icon = Icons.Default.Palette) {
-        Column {
-            ColorPickerItem(
-                label = "Primary Brand Color",
-                currentHex = state.primaryColorHex,
-                presetSwatches = listOf("#6366F1", "#8B5CF6", "#10B981", "#F43F5E", "#0284C7"),
-                onColorChange = { viewModel.updateColorHex(primary = it) }
-            )
-            ColorPickerItem(
-                label = "Accent Highlight Color",
-                currentHex = state.accentColorHex,
-                presetSwatches = listOf("#38BDF8", "#EC4899", "#06B6D4", "#FB923C", "#A855F7"),
-                onColorChange = { viewModel.updateColorHex(accent = it) }
-            )
-            ColorPickerItem(
-                label = "Background Color",
-                currentHex = state.backgroundColorHex,
-                presetSwatches = listOf("#0F172A", "#090D16", "#064E3B", "#FAFAF9", "#F8FAFC"),
-                onColorChange = { viewModel.updateColorHex(bg = it) }
-            )
-            ColorPickerItem(
-                label = "Surface / Card Color",
-                currentHex = state.cardBackgroundColorHex,
-                presetSwatches = listOf("#1E293B", "#131C2E", "#022C22", "#FFFFFF", "#27272A"),
-                onColorChange = { viewModel.updateColorHex(cardBg = it) }
-            )
-            ColorPickerItem(
-                label = "Body Text Color",
-                currentHex = state.textColorHex,
-                presetSwatches = listOf("#F8FAFC", "#ECFDF5", "#FAFAFA", "#1C1917", "#0F172A"),
-                onColorChange = { viewModel.updateColorHex(text = it) }
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun LayoutTab(viewModel: PortfolioViewModel, state: PortfolioState) {
-    ControlCard(title = "Header Template Picker", icon = Icons.Default.Style) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            HeaderTemplate.entries.forEach { template ->
-                val isSelected = state.headerTemplate == template
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { viewModel.updateHeaderTemplate(template) },
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (isSelected) Color(0xFF312E81) else Color(0xFF0F172A)
-                    ),
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        if (isSelected) Color(0xFF6366F1) else Color(0xFF334155)
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = template.displayName,
-                            color = if (isSelected) Color.White else Color(0xFF94A3B8),
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = 13.sp
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    ControlCard(title = "Hero Layout Template Picker", icon = Icons.Default.Style) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            HeroTemplate.entries.forEach { template ->
-                val isSelected = state.heroTemplate == template
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { viewModel.updateHeroTemplate(template) },
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (isSelected) Color(0xFF312E81) else Color(0xFF0F172A)
-                    ),
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        if (isSelected) Color(0xFF6366F1) else Color(0xFF334155)
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = template.displayName,
-                            color = if (isSelected) Color.White else Color(0xFF94A3B8),
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = 13.sp
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    ControlCard(title = "Section Visibility Toggles", icon = Icons.Default.Style) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            SectionToggleRow("About Me Section", state.showAboutSection) {
-                viewModel.toggleSectionVisibility(about = it)
-            }
-            SectionToggleRow("Skills & Technologies", state.showSkillsSection) {
-                viewModel.toggleSectionVisibility(skills = it)
-            }
-            SectionToggleRow("Featured Projects Section", state.showProjectsSection) {
-                viewModel.toggleSectionVisibility(projects = it)
-            }
-            SectionToggleRow("Contact & Social Footer", state.showContactSection) {
-                viewModel.toggleSectionVisibility(contact = it)
-            }
         }
     }
 }
@@ -465,7 +751,7 @@ private fun ContentTab(viewModel: PortfolioViewModel, state: PortfolioState) {
             OutlinedTextField(
                 value = state.aboutMeText,
                 onValueChange = { viewModel.updateAuthorContent(aboutMeText = it) },
-                label = { Text("About Me Section Paragraph") },
+                label = { Text("About Me Paragraph") },
                 colors = controlTextFieldColors(),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -482,63 +768,27 @@ private fun ContentTab(viewModel: PortfolioViewModel, state: PortfolioState) {
         )
     }
 
-    ControlCard(title = "Social Links", icon = Icons.Default.Edit) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedTextField(
-                value = state.githubUrl,
-                onValueChange = { viewModel.updateSocialLinks(github = it) },
-                label = { Text("GitHub Profile Link") },
-                colors = controlTextFieldColors(),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
-                value = state.linkedinUrl,
-                onValueChange = { viewModel.updateSocialLinks(linkedin = it) },
-                label = { Text("LinkedIn Profile Link") },
-                colors = controlTextFieldColors(),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
-                value = state.twitterUrl,
-                onValueChange = { viewModel.updateSocialLinks(twitter = it) },
-                label = { Text("X / Twitter Link") },
-                colors = controlTextFieldColors(),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
-                value = state.email,
-                onValueChange = { viewModel.updateSocialLinks(email = it) },
-                label = { Text("Contact Email Address") },
-                colors = controlTextFieldColors(),
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
+    ControlCard(title = "Featured Projects (${state.projectCards.size})", icon = Icons.Default.Work) {
+        ProjectCardEditor(
+            projectCards = state.projectCards,
+            onAddCard = { viewModel.addProjectCard(it) },
+            onUpdateCard = { viewModel.updateProjectCard(it) },
+            onDeleteCard = { viewModel.deleteProjectCard(it) },
+            onReorderCards = { viewModel.reorderProjectCards(it) }
+        )
     }
 }
 
 @Composable
-private fun ProjectsTab(viewModel: PortfolioViewModel, state: PortfolioState) {
-    ProjectCardEditor(
-        projectCards = state.projectCards,
-        onAddCard = { viewModel.addProjectCard(it) },
-        onUpdateCard = { viewModel.updateProjectCard(it) },
-        onDeleteCard = { viewModel.deleteProjectCard(it) },
-        onReorderCards = { viewModel.reorderProjectCards(it) }
-    )
-}
-
-@Composable
-private fun DeployTab(
+private fun ExportTab(
     viewModel: PortfolioViewModel,
     state: PortfolioState,
+    savedPortfolios: List<PortfolioState>,
     publishUiState: PublishUiState
 ) {
     val context = LocalContext.current
 
-    ControlCard(title = "GitHub Pages Credentials & Deploy", icon = Icons.Default.CloudUpload) {
+    ControlCard(title = "GitHub Pages Deploy", icon = Icons.Default.CloudUpload) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlinedTextField(
                 value = state.githubUsername,
@@ -564,149 +814,31 @@ private fun DeployTab(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            OutlinedTextField(
-                value = state.commitMessage,
-                onValueChange = { viewModel.updateGitHubCredentials(commitMessage = it) },
-                label = { Text("Commit Message") },
-                colors = controlTextFieldColors(),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
             Button(
                 onClick = { viewModel.publishToGitHub() },
                 enabled = publishUiState !is PublishUiState.Loading,
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
+                modifier = Modifier.fillMaxWidth().height(44.dp)
             ) {
                 if (publishUiState is PublishUiState.Loading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = Color.White,
-                        strokeWidth = 2.dp
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = "Publishing to GitHub...",
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Publishing...", fontSize = 12.sp)
                 } else {
-                    Icon(Icons.Default.CloudUpload, contentDescription = null)
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = "Publish to GitHub Pages",
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Icon(Icons.Default.CloudUpload, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Publish to GitHub Pages", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
             }
         }
     }
 
-    // Status Card Feedback
-    when (publishUiState) {
-        is PublishUiState.Success -> {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF064E3B)),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF10B981)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF10B981))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Published Successfully!", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Your website was committed to GitHub index.html.",
-                        color = Color(0xFFECFDF5),
-                        fontSize = 12.sp
-                    )
-                    Text(
-                        text = "Live URL: ${publishUiState.liveUrl}",
-                        color = Color(0xFF38BDF8),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(
-                            onClick = {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(publishUiState.liveUrl))
-                                context.startActivity(intent)
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981))
-                        ) {
-                            Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Open Live Site", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
-                        }
-
-                        OutlinedButton(
-                            onClick = {
-                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                val clip = ClipData.newPlainText("Live URL", publishUiState.liveUrl)
-                                clipboard.setPrimaryClip(clip)
-                                Toast.makeText(context, "URL copied to clipboard!", Toast.LENGTH_SHORT).show()
-                            }
-                        ) {
-                            Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Copy Link", color = Color.White, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
-                        }
-                    }
-                }
-            }
-        }
-        is PublishUiState.Error -> {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF450A0A)),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF43F5E)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Error, contentDescription = null, tint = Color(0xFFF43F5E))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Deployment Error", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = publishUiState.message,
-                        color = Color(0xFFFECDD3),
-                        fontSize = 12.sp
-                    )
-                }
-            }
-        }
-        else -> {}
-    }
-}
-
-@Composable
-private fun DraftsTab(
-    viewModel: PortfolioViewModel,
-    currentState: PortfolioState,
-    savedPortfolios: List<PortfolioState>
-) {
-    ControlCard(title = "Local Tablet Draft Persistence", icon = Icons.Default.Folder) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    ControlCard(title = "Local Draft Persistence", icon = Icons.Default.Folder) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(
-                value = currentState.portfolioName,
+                value = state.portfolioName,
                 onValueChange = { viewModel.updatePortfolioName(it) },
-                label = { Text("Draft Name") },
+                label = { Text("Draft Title") },
                 colors = controlTextFieldColors(),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -714,81 +846,24 @@ private fun DraftsTab(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = { viewModel.saveCurrentPortfolio() },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Save Draft", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                    Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Save Draft", fontSize = 11.sp)
                 }
 
                 OutlinedButton(
                     onClick = { viewModel.createNewDraft() },
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("New Draft", color = Color.White, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp), tint = Color.White)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("New Draft", color = Color.White, fontSize = 11.sp)
                 }
             }
         }
-    }
-
-    ControlCard(title = "Saved Drafts List (${savedPortfolios.size})", icon = Icons.Default.Folder) {
-        if (savedPortfolios.isEmpty()) {
-            Text("No saved drafts found. Tap 'Save Draft' above to save state to Room.", color = Color(0xFF94A3B8), fontSize = 12.sp)
-        } else {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                savedPortfolios.forEach { draft ->
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF334155)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(draft.portfolioName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                Text("${draft.authorName} • ${draft.projectCards.size} projects", color = Color(0xFF94A3B8), fontSize = 11.sp)
-                            }
-
-                            Button(
-                                onClick = { viewModel.loadPortfolio(draft) },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981))
-                            ) {
-                                Text("Restore", fontSize = 11.sp, maxLines = 1, softWrap = false)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SectionToggleRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(label, color = Color.White, fontSize = 13.sp)
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = Color(0xFF6366F1),
-                uncheckedThumbColor = Color(0xFF64748B),
-                uncheckedTrackColor = Color(0xFF1E293B)
-            )
-        )
     }
 }
 
@@ -796,17 +871,17 @@ private fun SectionToggleRow(label: String, checked: Boolean, onCheckedChange: (
 private fun ControlCard(title: String, icon: ImageVector, content: @Composable () -> Unit) {
     Card(
         colors = CardDefaults.cardColors(containerColor = Color(0xCC1E293B)),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(12.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x26FFFFFF)),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(icon, contentDescription = null, tint = Color(0xFF818CF8), modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Icon(icon, contentDescription = null, tint = Color(0xFF818CF8), modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             content()
         }
     }
