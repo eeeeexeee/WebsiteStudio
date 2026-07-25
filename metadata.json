@@ -1,0 +1,6 @@
+{
+  "name": "WebStudio",
+  "description": "Tablet Visual Website Builder & GitHub Publisher",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
